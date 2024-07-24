@@ -1,95 +1,173 @@
-import pandas as pd
-import re
+import datetime
+import random
 
-def load_data(file_path):
-    """Load data from a CSV file."""
-    try:
-        data = pd.read_csv(file_path)
-        print("Data loaded successfully.")
-        return data
-    except Exception as e:
-        print(f"Error loading data: {e}")
-        return None
+# Generar datos de ejemplo para 100 filas
+vendedores = ['Juan', 'María', 'Pedro', 'Ana', 'Luis']
+provincias = ['Pichincha', 'Guayas', 'Azuay', 'Manabí', 'El Oro']
+data = []
 
-def check_duplicates(data):
-    """Check for duplicate rows in the DataFrame."""
-    duplicates = data[data.duplicated()]
-    if not duplicates.empty:
-        print(f"Found {len(duplicates)} duplicate rows.")
-        return duplicates
-    else:
-        print("No duplicate rows found.")
-        return None
+for i in range(100):
+    vendedor = random.choice(vendedores)
+    provincia = random.choice(provincias)
+    factura = f'F{i+1:03d}'
+    monto = random.randint(1000, 100000)
+    fecha_vencimiento = (datetime.datetime.now() - datetime.timedelta(days=random.randint(0, 180))).strftime('%Y-%m-%d')
+    data.append({'Vendedor': vendedor, 'Provincia': provincia, 'Factura': factura, 'Monto': monto, 'Fecha_Vencimiento': fecha_vencimiento})
 
-def validate_format(data, column, pattern):
-    """Validate the format of a specified column using a regex pattern."""
-    invalid_entries = data[~data[column].astype(str).str.match(pattern)]
-    if not invalid_entries.empty:
-        print(f"Found {len(invalid_entries)} invalid entries in column '{column}'.")
-        return invalid_entries
-    else:
-        print(f"All entries in column '{column}' are valid.")
-        return None
+# Definir los intervalos de antigüedad
+intervals = {
+    '0-30 días': (0, 30),
+    '31-60 días': (31, 60),
+    '61-90 días': (61, 90),
+    '91-120 días': (91, 120),
+    '120+ días': (121, 999)
+}
 
-def validate_required_fields(data, required_columns):
-    """Check for missing values in required columns."""
-    missing_values = data[required_columns].isnull().sum()
-    missing_values = missing_values[missing_values > 0]
-    if not missing_values.empty:
-        print("Missing values found in required fields:")
-        print(missing_values)
-        return missing_values
-    else:
-        print("No missing values in required fields.")
-        return None
+def calcular_dias_vencidos(fecha_vencimiento, fecha_actual):
+    fecha_vencimiento = datetime.datetime.strptime(fecha_vencimiento, '%Y-%m-%d')
+    return (fecha_actual - fecha_vencimiento).days
 
-def generate_report(duplicates, invalid_entries, missing_values):
-    """Generate a simple report of the findings."""
-    with open('audit_report.txt', 'w') as report:
-        report.write("Audit Report\n")
-        report.write("="*50 + "\n\n")
+def determinar_intervalo(dias_vencidos, intervals):
+    for key, (min_dias, max_dias) in intervals.items():
+        if min_dias <= dias_vencidos <= max_dias:
+            return key
+    return '120+ días'
+
+def procesar_datos(data, intervals):
+    result = {}
+    fecha_actual = datetime.datetime.now()
+
+    for entry in data:
+        vendedor = entry['Vendedor']
+        provincia = entry['Provincia']
+        monto = entry['Monto']
+        dias_vencidos = calcular_dias_vencidos(entry['Fecha_Vencimiento'], fecha_actual)
+        intervalo_antiguedad = determinar_intervalo(dias_vencidos, intervals)
         
-        if duplicates is not None:
-            report.write("Duplicate Rows:\n")
-            report.write(duplicates.to_string())
-            report.write("\n\n")
+        if vendedor not in result:
+            result[vendedor] = {}
+        if provincia not in result[vendedor]:
+            result[vendedor][provincia] = {}
+        if intervalo_antiguedad not in result[vendedor][provincia]:
+            result[vendedor][provincia][intervalo_antiguedad] = 0
         
-        if invalid_entries is not None:
-            report.write("Invalid Entries:\n")
-            report.write(invalid_entries.to_string())
-            report.write("\n\n")
-        
-        if missing_values is not None:
-            report.write("Missing Values in Required Fields:\n")
-            report.write(missing_values.to_string())
-            report.write("\n\n")
-        
-        report.write("Audit completed successfully.\n")
-        
-    print("Audit report generated: audit_report.txt")
+        result[vendedor][provincia][intervalo_antiguedad] += monto
 
-def main():
-    file_path = 'data.csv'  # Replace with your file path
-    required_columns = ['column1', 'column2']  # Replace with your required columns
-    format_validations = {
-        'column1': r'^\d{4}-\d{2}-\d{2}$',  # Example: YYYY-MM-DD date format
-        'column2': r'^\d+$'  # Example: Only digits
-    }
-    
-    data = load_data(file_path)
-    if data is not None:
-        duplicates = check_duplicates(data)
-        invalid_entries = None
-        for column, pattern in format_validations.items():
-            invalids = validate_format(data, column, pattern)
-            if invalids is not None:
-                if invalid_entries is None:
-                    invalid_entries = invalids
-                else:
-                    invalid_entries = pd.concat([invalid_entries, invalids])
-        
-        missing_values = validate_required_fields(data, required_columns)
-        generate_report(duplicates, invalid_entries, missing_values)
+    return result
 
-if __name__ == '__main__':
-    main()
+def formatear_monto(monto):
+    return f"${monto:,.2f}"
+
+def generar_grafico_ascii(result):
+    # Crear un gráfico simple en formato de texto
+    grafico = ""
+    for vendedor, provincias in result.items():
+        grafico += f"\nVendedor: {vendedor}\n"
+        for provincia, intervalos in provincias.items():
+            grafico += f"  Provincia: {provincia}\n"
+            for intervalo, monto in intervalos.items():
+                grafico += f"    {intervalo}: {'*' * (monto // 10000)} ({formatear_monto(monto)})\n"
+    return grafico
+
+# Procesar los datos y generar el análisis
+result = procesar_datos(data, intervals)
+grafico_ascii = generar_grafico_ascii(result)
+
+# Generar el contenido del archivo RTF
+rtf_content = r"""{\rtf1\ansi\deff0
+{\fonttbl{\f0 Times New Roman;}}
+{\colortbl;\red0\green0\blue0;}
+\pard\sa200\sl276\slmult1\qc\b\f0\fs48 Análisis de Antigüedad de Cartera\b0\fs24\par
+\pard\sa200\sl276\slmult1\qc\f0\fs36 Distribuidora Farmacéutica\b0\fs24\par
+\pard\sa200\sl276\slmult1\qc\f0\fs24 Fecha: """ + datetime.datetime.now().strftime('%Y-%m-%d') + r"""\par
+\pard\sa200\sl276\slmult1\qc\f0\fs24 \par
+\pard\sa200\sl276\slmult1\qj\fs24
+\par
+\b Introducción\b0\par
+Este informe presenta el análisis de antigüedad de la cartera de la distribuidora farmacéutica.\par
+\par
+\b Descripción del Análisis\b0\par
+El análisis se realizó considerando las cuentas por cobrar agrupadas por vendedor y provincia,\par
+clasificando las facturas en diferentes intervalos de antigüedad.\par
+\par
+\b Datos de Clientes\b0\par
+"""
+
+# Añadir los datos de cada cliente al informe
+for entry in data:
+    rtf_content += f"Vendedor: {entry['Vendedor']}, Provincia: {entry['Provincia']}, Factura: {entry['Factura']}, Monto: {formatear_monto(entry['Monto'])}, Fecha Vencimiento: {entry['Fecha_Vencimiento']}\\par\n"
+
+rtf_content += r"""\par
+\b Resultados del Análisis\b0\par
+"""
+
+# Añadir los resultados del análisis al informe
+for vendedor, provincias in result.items():
+    rtf_content += f"\\b Vendedor: {vendedor}\\b0\\par\n"
+    for provincia, intervalos in provincias.items():
+        rtf_content += f"  Provincia: {provincia}\\par\n"
+        for intervalo, monto in intervalos.items():
+            rtf_content += f"    {intervalo}: {formatear_monto(monto)}\\par\n"
+
+rtf_content += r"""\par
+\b Gráfico de Antigüedad de Cartera\b0\par
+"""
+rtf_content += grafico_ascii.replace('\n', '\\par\n')
+
+# Añadir una tabla de resumen
+rtf_content += r"""\par
+\b Tabla de Resumen por Vendedor y Provincia\b0\par
+{\pard\sa200\sl276\slmult1\qc
+\table{\row\cell Vendedor\cell Provincia\cell 0-30 días\cell 31-60 días\cell 61-90 días\cell 91-120 días\cell 120+ días\cell\row}
+"""
+
+# Añadir los datos de resumen a la tabla
+for vendedor, provincias in result.items():
+    for provincia, intervalos in provincias.items():
+        rtf_content += f"{{\\row\\cell {vendedor}\\cell {provincia}"
+        for intervalo in ['0-30 días', '31-60 días', '61-90 días', '91-120 días', '120+ días']:
+            monto = intervalos.get(intervalo, 0)
+            rtf_content += f"\\cell {formatear_monto(monto)}"
+        rtf_content += r"\\cell\\row}\n"
+
+rtf_content += r"}\par"
+
+# Añadir una sección de inconsistencias y posibles fraudes
+rtf_content += r"""\par
+\b Inconsistencias y Posibles Fraudes\b0\par
+A continuación se presentan las inconsistencias detectadas que podrían indicar posibles fraudes:\par
+"""
+
+# Analizar y listar posibles inconsistencias
+for vendedor, provincias in result.items():
+    for provincia, intervalos in provincias.items():
+        for intervalo, monto in intervalos.items():
+            if intervalo == '120+ días' and monto > 0:
+                rtf_content += f"Vendedor: {vendedor}, Provincia: {provincia}, Intervalo: {intervalo}, Monto: {formatear_monto(monto)}\\par\n"
+
+# Añadir explicaciones y detalles sobre posibles fraudes
+rtf_content += r"""\par
+\b Explicaciones y Detalles sobre Posibles Fraudes\b0\par
+Las facturas vencidas por más de 120 días representan un riesgo significativo de fraude por las siguientes razones:\par
+1. \b Desvíos Temporales de Pagos\b0: Este tipo de fraude ocurre cuando los pagos recibidos de los clientes no se registran de inmediato, permitiendo que el personal encargado use temporalmente estos fondos para otros fines.\par
+2. \b Ocultación de Pagos\b0: Las facturas vencidas pueden ser una señal de que los pagos se están ocultando intencionalmente para manipular los resultados financieros de la empresa.\par
+3. \b Manipulación de Registros\b0: El personal podría estar manipulando los registros contables para mostrar un estado financiero más favorable de lo que realmente es, retrasando el registro de los pagos.\par
+\par
+\b Evidencias y Acciones Recomendadas\b0\par
+Las siguientes evidencias y acciones pueden ayudar a confirmar y mitigar los riesgos de fraude:\par
+1. \b Conciliación Bancaria\b0: Realizar una conciliación detallada entre los registros de cuentas por cobrar y los estados de cuenta bancarios para identificar discrepancias.\par
+2. \b Verificación con Clientes\b0: Contactar a los clientes para confirmar los pagos realizados y las fechas de los mismos.\par
+3. \b Auditorías Internas\b0: Realizar auditorías internas sorpresa para revisar los procesos de registro y manejo de pagos.\par
+4. \b Análisis de Flujos de Caja\b0: Analizar los flujos de caja para detectar patrones inusuales que puedan indicar desvíos temporales de fondos.\par
+5. \b Implementación de Controles Internos\b0: Fortalecer los controles internos, como la segregación de funciones y la autorización de pagos, para prevenir la manipulación de registros.\par
+"""
+
+# Añadir el cierre del documento RTF
+rtf_content += r"}"
+
+# Guardar el contenido en un archivo RTF
+filename = 'analisis_antiguedad_cartera.rtf'
+with open(filename, 'w') as file:
+    file.write(rtf_content)
+
+print(f"Informe RTF de análisis de antigüedad de cartera creado y guardado exitosamente en '{filename}'.")
