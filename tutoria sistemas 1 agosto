@@ -1,0 +1,51 @@
+import pandas as pd
+from tkinter import Tk
+from tkinter.filedialog import askopenfilename
+
+def seleccionar_archivo():
+    Tk().withdraw()  # Cierra la ventana principal de Tkinter
+    file_path = askopenfilename(filetypes=[("Excel files", "*.xlsx;*.xls")])
+    return file_path
+
+def analizar_anomalias_cartera(file_path):
+    # Cargar el archivo Excel
+    xls = pd.ExcelFile(file_path)
+    pagos_vencidos_90_dias = []
+
+    for sheet_name in xls.sheet_names:
+        # Leer cada hoja, asumiendo que los nombres de las columnas están en la primera fila
+        df = pd.read_excel(xls, sheet_name=sheet_name, header=0)
+
+        # Imprimir los nombres de las columnas para verificación
+        print(f"Nombres de columnas en la hoja '{sheet_name}': {df.columns.tolist()}")
+
+        # Limpiar los nombres de las columnas
+        df.columns = df.columns.str.strip()
+
+        # Filtrar pagos vencidos a más de 90 días
+        if 'DÍAS DE MORA' in df.columns:
+            vencidos_90_dias = df[df['DÍAS DE MORA'] >= 90]
+            if not vencidos_90_dias.empty:
+                pagos_vencidos_90_dias.append(vencidos_90_dias)
+        else:
+            print(f"Hoja {sheet_name} no contiene la columna 'DÍAS DE MORA'.")
+
+    if pagos_vencidos_90_dias:
+        # Concatenar resultados
+        pagos_vencidos_90_dias_df = pd.concat(pagos_vencidos_90_dias, ignore_index=True)
+
+        # Guardar resultados en un nuevo archivo Excel
+        with pd.ExcelWriter('carteras_vencidas_90_dias.xlsx') as writer:
+            pagos_vencidos_90_dias_df.to_excel(writer, sheet_name='Vencidos_90_dias', index=False)
+
+        print("Análisis completado. Resultados guardados en 'carteras_vencidas_90_dias.xlsx'.")
+    else:
+        print("No se encontraron pagos vencidos a más de 90 días.")
+
+# Permitir al usuario seleccionar el archivo
+file_path = seleccionar_archivo()
+
+if file_path:
+    analizar_anomalias_cartera(file_path)
+else:
+    print("No se seleccionó ningún archivo.")
