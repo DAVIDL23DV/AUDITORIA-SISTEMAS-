@@ -1,11 +1,147 @@
 import pandas as pd
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
+from docx import Document
+from docx.shared import Pt
+from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from datetime import datetime
 
 def seleccionar_archivo():
     Tk().withdraw()  # Cierra la ventana principal de Tkinter
     file_path = askopenfilename(filetypes=[("Excel files", "*.xlsx;*.xls")])
     return file_path
+
+def generar_informe_excel(pagos_vencidos_90_dias):
+    # Generar nombre de archivo único
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    file_name = f'CARTERA_DE_CLIENTES_VENCIDAS_{timestamp}.xlsx'
+    # Guardar resultados en un nuevo archivo Excel
+    with pd.ExcelWriter(file_name) as writer:
+        pagos_vencidos_90_dias.to_excel(writer, sheet_name='Vencidos_90_dias', index=False)
+    print(f"Análisis completado. Resultados guardados en '{file_name}'.")
+
+def generar_informe_word(pagos_vencidos_90_dias):
+    # Generar nombre de archivo único
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    file_name = f'INFORME_AUDITORIA_SALUD_TOTAL_{timestamp}.docx'
+    
+    # Crear un documento de Word
+    doc = Document()
+
+    # Título del informe
+    doc.add_heading('INFORME AUDITORIA SALUD TOTAL S.A', 0)
+
+    # Introducción
+    doc.add_heading('Introducción', level=1)
+    doc.add_paragraph(
+        "Este informe detalla los hallazgos de la auditoría realizada sobre las carteras vencidas a más de 90 días. "
+        "El objetivo de esta auditoría es identificar posibles casos de fraude de jineteo de fondos, cumpliendo con las disposiciones "
+        "de la NIIF 9 respecto a la evaluación de la antigüedad de la cartera."
+    )
+
+    # Desarrollo
+    doc.add_heading('Desarrollo', level=1)
+    doc.add_paragraph(
+        "Durante la auditoría, se analizaron las carteras de diferentes cobradores. Se filtraron los registros donde "
+        "'DÍAS DE MORA' es mayor o igual a 90 días. Estos registros representan clientes con pagos vencidos por más de 90 días, "
+        "lo cual indica un riesgo significativo de fraude. La NIIF 9 establece que la antigüedad de la cartera debe ser evaluada "
+        "para determinar la provisión de cuentas incobrables y posibles pérdidas crediticias esperadas."
+    )
+
+    # Relación con la NIIF 9
+    doc.add_heading('Relación con la NIIF 9', level=1)
+    doc.add_paragraph(
+        "La NIIF 9 requiere que las empresas evalúen las pérdidas crediticias esperadas en sus cuentas por cobrar, "
+        "teniendo en cuenta la antigüedad de la cartera. En este caso, se identificaron varias cuentas con más de 90 días de mora, "
+        "lo que sugiere que podrían ser consideradas incobrables según las políticas de la NIIF 9. Esto afecta directamente "
+        "la estimación de provisiones y la evaluación del riesgo de crédito."
+    )
+
+    # Cómo se halló el problema
+    doc.add_heading('Cómo se halló el problema', level=1)
+    doc.add_paragraph(
+        "El problema se halló mediante la revisión de los registros de carteras proporcionados por cada cobrador. "
+        "Se utilizó un script en Python para analizar estos datos y filtrar los pagos vencidos a más de 90 días. "
+        "Particularmente, se observó que el cobrador Juan Perez tenía un número significativo de cuentas vencidas, lo cual llamó la atención."
+    )
+
+    # Por qué es un problema
+    doc.add_heading('Por qué es un problema', level=1)
+    doc.add_paragraph(
+        "Los pagos vencidos a más de 90 días representan un riesgo financiero significativo para la empresa. "
+        "Además, la presencia de numerosos pagos vencidos puede indicar prácticas fraudulentas, como el jineteo de fondos, "
+        "donde los cobradores retienen temporalmente los pagos antes de registrarlos oficialmente. La NIIF 9 requiere que las "
+        "empresas evalúen el riesgo de crédito y ajusten sus provisiones en consecuencia, lo cual puede impactar directamente "
+        "en los estados financieros."
+    )
+
+    # Por qué existe un riesgo
+    doc.add_heading('Por qué existe un riesgo', level=1)
+    doc.add_paragraph(
+        "El riesgo de fraude es alto en estos casos debido a la posibilidad de manipulación de los registros de pagos. "
+        "El jineteo de fondos es una práctica común en situaciones donde los controles internos son débiles y los cobradores "
+        "tienen acceso a los pagos antes de que sean registrados oficialmente. La evaluación de la antigüedad de la cartera "
+        "conforme a la NIIF 9 puede ayudar a identificar y mitigar estos riesgos."
+    )
+
+    # Pruebas realizadas
+    doc.add_heading('Pruebas Realizadas', level=1)
+    doc.add_paragraph(
+        "Para identificar posibles fraudes de jineteo de fondos, se realizaron las siguientes pruebas de auditoría:"
+    )
+    pruebas = [
+        "Revisión de los registros de pagos y su comparación con los depósitos bancarios.",
+        "Análisis de la antigüedad de la cartera para identificar pagos vencidos.",
+        "Entrevistas con el personal de cobranzas para entender los procedimientos de manejo de pagos.",
+        "Evaluación de los controles internos relacionados con la recepción y registro de pagos."
+    ]
+    for prueba in pruebas:
+        doc.add_paragraph(f"• {prueba}")
+
+    # Datos de pagos vencidos
+    doc.add_heading('Datos de Pagos Vencidos a Más de 90 Días', level=1)
+    table = doc.add_table(rows=1, cols=len(pagos_vencidos_90_dias.columns))
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+
+    hdr_cells = table.rows[0].cells
+    for i, column in enumerate(pagos_vencidos_90_dias.columns):
+        hdr_cells[i].text = column
+        hdr_cells[i].paragraphs[0].runs[0].font.bold = True
+
+    for index, row in pagos_vencidos_90_dias.iterrows():
+        row_cells = table.add_row().cells
+        for i, cell in enumerate(row):
+            row_cells[i].text = str(cell)
+
+    # Ajustar estilo de la tabla
+    table.style = 'Table Grid'
+    for row in table.rows:
+        for cell in row.cells:
+            cell.vertical_alignment = WD_TABLE_ALIGNMENT.CENTER
+
+    # Papeles de trabajo
+    doc.add_heading('Papeles de Trabajo', level=1)
+    doc.add_paragraph(
+        "Para descubrir este tipo de fraude, los auditores deben realizar una serie de procedimientos detallados, incluyendo:"
+    )
+    procedimientos = [
+        "Comparación de los registros de pagos con los extractos bancarios para asegurar que los pagos fueron depositados en tiempo y forma.",
+        "Verificación de los procedimientos de autorización y registro de pagos.",
+        "Análisis de patrones inusuales en los registros de pagos y depósitos.",
+        "Evaluación de la segregación de funciones en el proceso de manejo de pagos."
+    ]
+    for procedimiento in procedimientos:
+        doc.add_paragraph(f"• {procedimiento}")
+
+    doc.add_paragraph(
+        "Además, es importante realizar entrevistas y confirmar directamente con los clientes los pagos realizados y sus fechas. "
+        "Esto puede ayudar a identificar discrepancias y posibles fraudes."
+    )
+
+    # Guardar el documento de Word
+    doc.save(file_name)
+    print(f"Informe de auditoría guardado en '{file_name}'.")
 
 def analizar_anomalias_cartera(file_path):
     # Cargar el archivo Excel
@@ -13,32 +149,29 @@ def analizar_anomalias_cartera(file_path):
     pagos_vencidos_90_dias = []
 
     for sheet_name in xls.sheet_names:
-        # Leer cada hoja, asumiendo que los nombres de las columnas están en la primera fila
-        df = pd.read_excel(xls, sheet_name=sheet_name, header=0)
-
-        # Imprimir los nombres de las columnas para verificación
-        print(f"Nombres de columnas en la hoja '{sheet_name}': {df.columns.tolist()}")
+        # Leer cada hoja
+        df = pd.read_excel(xls, sheet_name=sheet_name)
 
         # Limpiar los nombres de las columnas
         df.columns = df.columns.str.strip()
 
-        # Filtrar pagos vencidos a más de 90 días
-        if 'DÍAS DE MORA' in df.columns:
-            vencidos_90_dias = df[df['DÍAS DE MORA'] >= 90]
+        # Convertir columna de saldo a numérica, eliminando caracteres no numéricos
+        df['SALDO'] = df['SALDO'].replace('[\$,]', '', regex=True).astype(float)
+
+        # Filtrar pagos vencidos a más de 90 días con saldo mayor a 0
+        if 'DÍAS DE MORA' in df.columns and 'SALDO' in df.columns:
+            vencidos_90_dias = df[(df['DÍAS DE MORA'] >= 90) & (df['SALDO'] > 0)]
             if not vencidos_90_dias.empty:
                 pagos_vencidos_90_dias.append(vencidos_90_dias)
         else:
-            print(f"Hoja {sheet_name} no contiene la columna 'DÍAS DE MORA'.")
+            print(f"Hoja {sheet_name} no contiene las columnas necesarias 'DÍAS DE MORA' y/o 'SALDO'.")
 
     if pagos_vencidos_90_dias:
         # Concatenar resultados
         pagos_vencidos_90_dias_df = pd.concat(pagos_vencidos_90_dias, ignore_index=True)
-
-        # Guardar resultados en un nuevo archivo Excel
-        with pd.ExcelWriter('carteras_vencidas_90_dias.xlsx') as writer:
-            pagos_vencidos_90_dias_df.to_excel(writer, sheet_name='Vencidos_90_dias', index=False)
-
-        print("Análisis completado. Resultados guardados en 'carteras_vencidas_90_dias.xlsx'.")
+        # Generar informes
+        generar_informe_excel(pagos_vencidos_90_dias_df)
+        generar_informe_word(pagos_vencidos_90_dias_df)
     else:
         print("No se encontraron pagos vencidos a más de 90 días.")
 
