@@ -1,46 +1,44 @@
 import pandas as pd
-from tkinter import Tk
-from tkinter.filedialog import askopenfilename
+import streamlit as st
 from docx import Document
 from docx.shared import Pt
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from datetime import datetime
+from io import BytesIO
 
-def seleccionar_archivo(tipo_archivo):
-    Tk().withdraw()  # Cierra la ventana principal de Tkinter
-    if tipo_archivo == "excel":
-        file_path = askopenfilename(filetypes=[("Excel files", "*.xlsx;*.xls")])
-    elif tipo_archivo == "word":
-        file_path = askopenfilename(filetypes=[("Word files", "*.docx")])
-    return file_path
-
+# Función para generar el informe de Excel
 def generar_informe_excel(pagos_vencidos_90_dias):
-    # Generar nombre de archivo único
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     file_name = f'CARTERA_DE_CLIENTES_VENCIDAS_{timestamp}.xlsx'
-    # Guardar resultados en un nuevo archivo Excel
-    with pd.ExcelWriter(file_name) as writer:
+    
+    # Crear un buffer en memoria
+    buffer = BytesIO()
+    
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
         pagos_vencidos_90_dias.to_excel(writer, sheet_name='Vencidos_90_dias', index=False)
-    print(f"Análisis completado. Resultados guardados en '{file_name}'.")
-    return file_name
+    
+    st.success(f"Análisis completado. Resultados guardados en '{file_name}'.")
+    
+    # Colocar el buffer en la posición inicial
+    buffer.seek(0)
+    
+    # Descargar el archivo de Excel
+    st.download_button(label="Descargar archivo Excel", data=buffer, file_name=file_name, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-def extraer_historial_clientes(file_path):
-    # Cargar el archivo de Word y extraer texto
-    doc = Document(file_path)
-    historial_clientes = []
-    for para in doc.paragraphs:
-        historial_clientes.append(para.text)
+# Función para extraer historial de clientes desde un archivo de Word
+def extraer_historial_clientes(file):
+    doc = Document(file)
+    historial_clientes = [para.text for para in doc.paragraphs]
     return historial_clientes
 
+# Función para generar el informe de Word
 def generar_informe_word(pagos_vencidos_90_dias, historial_clientes):
-    # Generar nombre de archivo único
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     file_name = f'INFORME_AUDITORIA_SALUD_TOTAL_{timestamp}.docx'
     
-    # Crear un documento de Word
     doc = Document()
 
-    # Título del informe
+    # Añadir contenido al informe
     doc.add_heading('INFORME AUDITORIA SALUD TOTAL S.A', 0)
 
     # Índice
@@ -334,53 +332,54 @@ def generar_informe_word(pagos_vencidos_90_dias, historial_clientes):
     )
 
     # Guardar el documento de Word
-    doc.save(file_name)
-    print(f"Informe de auditoría guardado en '{file_name}'.")
+    buffer = BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    
+    st.success(f"Informe de auditoría guardado en '{file_name}'.")
 
-def analizar_anomalias_cartera(file_path):
-    # Cargar el archivo Excel
-    xls = pd.ExcelFile(file_path)
+    # Descargar el archivo de Word
+    st.download_button(label="Descargar archivo Word", data=buffer, file_name=file_name, mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+# Función para analizar las anomalías de la cartera
+def analizar_anomalias_cartera(file):
+    xls = pd.ExcelFile(file)
     pagos_vencidos_90_dias = []
 
     for sheet_name in xls.sheet_names:
-        # Leer cada hoja
         df = pd.read_excel(xls, sheet_name=sheet_name)
-
-        # Limpiar los nombres de las columnas
         df.columns = df.columns.str.strip()
-
-        # Convertir columna de saldo a numérica, eliminando caracteres no numéricos
         df['SALDO'] = df['SALDO'].replace('[\$,]', '', regex=True).astype(float)
 
-        # Filtrar pagos vencidos a más de 90 días con saldo mayor a 0
         if 'DÍAS DE MORA' in df.columns and 'SALDO' in df.columns:
-            vencidos_90_dias = df[(df['DÍAS DE MORA'] >= 90) & (df['SALDO'] > 0)]
+            vencidos_90_dias = df[(df['DÍAS_DE_MORA'] >= 90) & (df['SALDO'] > 0)]
             if not vencidos_90_dias.empty:
                 pagos_vencidos_90_dias.append(vencidos_90_dias)
-        else:
-            print(f"Hoja {sheet_name} no contiene las columnas necesarias 'DÍAS DE MORA' y/o 'SALDO'.")
 
     if pagos_vencidos_90_dias:
-        # Concatenar resultados
         pagos_vencidos_90_dias_df = pd.concat(pagos_vencidos_90_dias, ignore_index=True)
         return pagos_vencidos_90_dias_df
     else:
-        print("No se encontraron pagos vencidos a más de 90 días.")
+        st.warning("No se encontraron pagos vencidos a más de 90 días.")
         return None
 
-# Permitir al usuario seleccionar el archivo para carteras vencidas
-file_path = seleccionar_archivo("excel")
+# Streamlit UI
+st.title("Auditoría Forense - Salud Total S.A.")
 
-if file_path:
-    pagos_vencidos_90_dias_df = analizar_anomalias_cartera(file_path)
+# Subir archivo Excel para análisis de carteras vencidas
+st.header("Subir archivo Excel")
+file_excel = st.file_uploader("Seleccione el archivo Excel con las carteras vencidas", type=["xlsx", "xls"])
+
+if file_excel:
+    pagos_vencidos_90_dias_df = analizar_anomalias_cartera(file_excel)
 
     if pagos_vencidos_90_dias_df is not None:
-        # Permitir al usuario seleccionar el archivo de historial de clientes
-        print("\nSeleccione el archivo de historial de clientes.")
-        file_path_historial = seleccionar_archivo("word")
+        generar_informe_excel(pagos_vencidos_90_dias_df)
 
-        if file_path_historial:
-            historial_clientes = extraer_historial_clientes(file_path_historial)
+        # Subir archivo Word para historial de clientes
+        st.header("Subir archivo Word")
+        file_word = st.file_uploader("Seleccione el archivo Word con el historial de clientes", type=["docx"])
+
+        if file_word:
+            historial_clientes = extraer_historial_clientes(file_word)
             generar_informe_word(pagos_vencidos_90_dias_df, historial_clientes)
-else:
-    print("No se seleccionó ningún archivo.")
