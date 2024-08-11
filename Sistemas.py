@@ -349,12 +349,15 @@ def analizar_anomalias_cartera(file):
     for sheet_name in xls.sheet_names:
         df = pd.read_excel(xls, sheet_name=sheet_name)
         df.columns = df.columns.str.strip()
-        df['SALDO'] = df['SALDO'].replace('[\$,]', '', regex=True).astype(float)
 
+        # Asegurarse de que las columnas necesarias estén presentes
         if 'DÍAS DE MORA' in df.columns and 'SALDO' in df.columns:
-            vencidos_90_dias = df[(df['DÍAS_DE_MORA'] >= 90) & (df['SALDO'] > 0)]
+            df['SALDO'] = df['SALDO'].replace('[\$,]', '', regex=True).astype(float)
+            vencidos_90_dias = df[(df['DÍAS DE MORA'] >= 90) & (df['SALDO'] > 0)]
             if not vencidos_90_dias.empty:
                 pagos_vencidos_90_dias.append(vencidos_90_dias)
+        else:
+            st.error(f"Hoja {sheet_name} no contiene las columnas necesarias 'DÍAS DE MORA' y/o 'SALDO'.")
 
     if pagos_vencidos_90_dias:
         pagos_vencidos_90_dias_df = pd.concat(pagos_vencidos_90_dias, ignore_index=True)
