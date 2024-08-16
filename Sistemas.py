@@ -6,6 +6,61 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from datetime import datetime
 from io import BytesIO
 
+# Estilos personalizados
+st.markdown("""
+    <style>
+        /* Cambiar color de fondo y color de texto */
+        .stApp {
+            background-color: #f5f5f5;
+            color: #333333;
+        }
+        
+        /* Estilo para los encabezados */
+        h1, h2, h3 {
+            color: #4B8BBE;
+            font-family: 'Arial Black', sans-serif;
+        }
+
+        /* Estilo para el texto */
+        p, li {
+            font-family: 'Arial', sans-serif;
+            color: #333333;
+        }
+
+        /* Estilo para el botón de descarga */
+        .stDownloadButton {
+            background-color: #FF6F61;
+            color: white;
+            border-radius: 10px;
+        }
+        .stDownloadButton:hover {
+            background-color: #FF6F61;
+            opacity: 0.85;
+        }
+
+        /* Estilo para el botón de subir archivos */
+        .stFileUploader {
+            background-color: #FFD700;
+            color: #333333;
+            border-radius: 10px;
+            border: 1px solid #FF6F61;
+        }
+
+        /* Estilo para el encabezado principal */
+        .stTitle {
+            color: #FF6F61;
+            font-family: 'Georgia', serif;
+        }
+        
+        /* Estilo para los subtítulos */
+        .stHeader {
+            color: #4B8BBE;
+            font-family: 'Arial', sans-serif;
+        }
+
+    </style>
+""", unsafe_allow_html=True)
+
 # Función para generar el informe de Excel
 def generar_informe_excel(pagos_vencidos_90_dias):
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -32,14 +87,14 @@ def extraer_historial_clientes(file):
     return historial_clientes
 
 # Función para generar el informe de Word
-def generar_informe_word(pagos_vencidos_90_dias, historial_clientes):
+def generar_informe_word(pagos_vencidos_90_dias, historial_clientes, nombre_empresa, nombre_fraudador, personal_involucrado, fecha_auditoria):
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    file_name = f'INFORME_AUDITORIA_SALUD_TOTAL_{timestamp}.docx'
+    file_name = f'INFORME_AUDITORIA_{nombre_empresa}_{timestamp}.docx'
     
     doc = Document()
 
     # Añadir contenido al informe
-    doc.add_heading('INFORME AUDITORIA SALUD TOTAL S.A', 0)
+    doc.add_heading(f'INFORME AUDITORIA {nombre_empresa.upper()}', 0)
 
     # Índice
     doc.add_paragraph('Índice')
@@ -70,26 +125,23 @@ def generar_informe_word(pagos_vencidos_90_dias, historial_clientes):
     # Resumen Ejecutivo
     doc.add_heading('1. Resumen Ejecutivo', level=1)
     doc.add_paragraph(
-        "Este informe detalla los resultados de la auditoría forense realizada en 'Salud Total S.A.' durante el año 2024, en respuesta a sospechas de fraude por jineteo de cobranzas. "
-        "Se identificaron discrepancias significativas entre los pagos de los clientes y los registros contables, lo que sugiere la posibilidad de que algunos miembros del personal de cobranzas "
-        "estén desviando temporalmente fondos antes de registrarlos oficialmente.\n"
-        "La investigación reveló debilidades en los controles internos de la empresa, que pudieron haber facilitado estas actividades fraudulentas. En particular, se observó que las carteras vencidas "
-        "a más de 90 días presentan un riesgo elevado de fraude, ya que es común que los patrones de comportamiento en estas cuentas muestren señales de manipulación y retención de pagos. "
-        "Identificar estos patrones es crucial para prevenir y detectar el jineteo de cobranzas, ya que permite enfocarse en las áreas de mayor riesgo y tomar acciones correctivas de manera oportuna.\n"
-        "Se proponen medidas correctivas para fortalecer los controles internos, mejorar la supervisión de las actividades de cobranzas, y mitigar el riesgo de futuros fraudes en la empresa."
+        f"Este informe detalla los resultados de la auditoría forense realizada en '{nombre_empresa}' durante el año {fecha_auditoria.year}, en respuesta a sospechas de fraude por parte de {nombre_fraudador}. "
+        "Se identificaron discrepancias significativas entre los pagos de los clientes y los registros contables, lo que sugiere la posibilidad de que algunos miembros del personal "
+        f"de {personal_involucrado} estén desviando temporalmente fondos antes de registrarlos oficialmente.\n"
+        "La investigación reveló debilidades en los controles internos de la empresa, que pudieron haber facilitado estas actividades fraudulentas."
     )
 
     # Antecedentes
     doc.add_heading('2. Antecedentes', level=1)
     doc.add_paragraph(
-        "'Salud Total S.A.' es una distribuidora farmacéutica con una amplia cartera de clientes a nivel nacional. Recientemente, la gerencia notó discrepancias entre los pagos recibidos de los clientes y los registros contables oficiales. "
-        "Estas discrepancias, junto con denuncias internas, llevaron a la sospecha de que el personal de cobranzas podría estar involucrado en actividades fraudulentas."
+        f"'{nombre_empresa}' es una empresa con una amplia cartera de clientes. Recientemente, la gerencia notó discrepancias entre los pagos recibidos de los clientes y los registros contables oficiales. "
+        "Estas discrepancias, junto con denuncias internas, llevaron a la sospecha de que el personal involucrado podría estar cometiendo actividades fraudulentas."
     )
 
     # Alegaciones y Evaluación Inicial
     doc.add_heading('3. Alegaciones y Evaluación Inicial', level=1)
     doc.add_paragraph(
-        "La gerencia de 'Salud Total S.A.' recibió múltiples informes que indicaban irregularidades en los cobros realizados por el personal de cobranzas. "
+        f"'{nombre_empresa}.' recibió múltiples informes que indicaban irregularidades en los cobros realizados por el personal de cobranzas. "
         "Se alegó que algunos pagos de clientes no coincidían con los registros contables y que los depósitos en las cuentas bancarias de la empresa se realizaban con retraso. "
         "Ante estas alegaciones, se decidió iniciar una auditoría forense para determinar la veracidad de las acusaciones y la magnitud del fraude."
     )
@@ -185,7 +237,7 @@ def generar_informe_word(pagos_vencidos_90_dias, historial_clientes):
     # Resumen de Pruebas Realizadas
     doc.add_heading('8. Resumen de Pruebas Realizadas', level=1)
     doc.add_paragraph(
-        "Las pruebas realizadas confirmaron la existencia de debilidades significativas en los controles internos de 'Salud Total S.A.'. "
+        "Las pruebas realizadas confirmaron la existencia de debilidades significativas en los controles internos de '{nombre_empresa}' "
         "Estas debilidades permitieron a algunos miembros del personal de cobranzas desviar temporalmente los pagos de clientes, manipular registros contables y retrasar los depósitos bancarios. "
         "La falta de supervisión y controles efectivos fue un factor clave que facilitó la ocurrencia del fraude."
     )
@@ -200,7 +252,7 @@ def generar_informe_word(pagos_vencidos_90_dias, historial_clientes):
     # Identificación de los Sospechosos
     doc.add_heading('10. Identificación de los Sospechosos', level=1)
     doc.add_paragraph(
-        "El principal sospechoso identificado es Juan Pérez, cobrador de 'Salud Total S.A.'. Las pruebas indican que Juan Pérez tenía acceso no controlado a los fondos y la capacidad de manipular los registros contables. "
+        "El principal sospechoso identificado es Juan Pérez, cobrador de '{nombre_empresa}''. Las pruebas indican que Juan Pérez tenía acceso no controlado a los fondos y la capacidad de manipular los registros contables. "
         "No se encontraron evidencias de la participación de otros empleados en este fraude."
     )
 
@@ -357,7 +409,7 @@ def analizar_anomalias_cartera(file):
             if not vencidos_90_dias.empty:
                 pagos_vencidos_90_dias.append(vencidos_90_dias)
         else:
-            st.error(f"Hoja {sheet_name} no contiene las columnas necesarias 'DÍAS DE MORA' y/o 'SALDO'.")
+            st.error(f"Hoja {sheet_name} no contiene las columnas necesarias 'DÍAS DE MORA' y/o'SALDO'.")
 
     if pagos_vencidos_90_dias:
         pagos_vencidos_90_dias_df = pd.concat(pagos_vencidos_90_dias, ignore_index=True)
@@ -367,10 +419,41 @@ def analizar_anomalias_cartera(file):
         return None
 
 # Streamlit UI
-st.title("Auditoría Forense - Salud Total S.A.")
+st.title("Auditoría Forense")
+st.markdown("""
+**Bienvenido a la herramienta de auditoría forense**. Esta aplicación está diseñada para ayudar en la identificación y análisis de anomalías en las cuentas por cobrar de la empresa, especialmente enfocándose en la detección de fraudes como el jineteo de cobranzas.
+""")
+
+st.header("Descripción de la herramienta")
+st.markdown("""
+Esta herramienta permite cargar y analizar datos de pagos vencidos de clientes, generando informes detallados en Excel y Word. 
+Las principales funcionalidades incluyen:
+
+- **Análisis de carteras vencidas**: Identificación de cuentas con pagos vencidos a más de 90 días.
+- **Generación de informes**: Creación de informes en formatos Excel y Word con detalles específicos sobre las transacciones revisadas y hallazgos.
+- **Detección de fraudes**: Identificación de patrones inusuales que podrían indicar actividades fraudulentas, como el jineteo de cobranzas.
+
+### Instrucciones de uso:
+1. **Subir archivo Excel**: Carga el archivo de Excel con las carteras vencidas para iniciar el análisis.
+2. **Subir archivo Word** (opcional): Carga un archivo de Word con el historial de clientes para incluir en el informe.
+3. **Descargar informes**: Una vez procesados los datos, descarga los informes generados en los formatos proporcionados.
+""")
 
 # Subir archivo Excel para análisis de carteras vencidas
 st.header("Subir archivo Excel")
+st.markdown("Por favor, sube el archivo Excel que contiene la información de las carteras vencidas.")
+
+# Añadir el botón de descarga del archivo de ejemplo aquí
+st.markdown("Si no tienes un archivo de ejemplo, puedes descargar una plantilla de ejemplo aquí:")
+
+# Asegúrate de que el archivo esté en la ruta correcta antes de intentar abrirlo.
+try:
+    with open("Plantilla Evaluacion de cartera.xlsx", "rb") as f:
+        st.download_button(label="Descargar plantilla de ejemplo", data=f, file_name="Plantilla_Evaluacion_de_cartera.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+except FileNotFoundError:
+    st.error("No se pudo encontrar la plantilla de ejemplo. Asegúrate de que el archivo está en la ubicación correcta.")
+
+# Aquí es donde se solicita el archivo Excel
 file_excel = st.file_uploader("Seleccione el archivo Excel con las carteras vencidas", type=["xlsx", "xls"])
 
 if file_excel:
@@ -381,8 +464,27 @@ if file_excel:
 
         # Subir archivo Word para historial de clientes
         st.header("Subir archivo Word")
+        st.markdown("Opcional: Sube un archivo Word que contenga el historial de clientes que desees incluir en el informe final.")
         file_word = st.file_uploader("Seleccione el archivo Word con el historial de clientes", type=["docx"])
 
         if file_word:
             historial_clientes = extraer_historial_clientes(file_word)
-            generar_informe_word(pagos_vencidos_90_dias_df, historial_clientes)
+
+            # Aquí se solicita el formulario después de subir los archivos
+            st.header("Formulario de datos de la auditoría")
+            nombre_empresa = st.text_input("Nombre de la empresa")
+            nombre_fraudador = st.text_input("Nombre del posible defraudador")
+            personal_involucrado = st.text_input("Personal involucrado en el manejo de fondos")
+            fecha_auditoria = st.date_input("Fecha de la auditoría")
+
+            # Campo adicional para seleccionar el tipo de fraude
+            tipo_fraude = st.selectbox(
+                "Seleccione el tipo de fraude",
+                ["Fraude financiero", "Fraude por apropiación indebida de activos", "Corrupción"]
+            )
+
+            if st.button("Generar Informe de Auditoría"):
+                if nombre_empresa and nombre_fraudador and personal_involucrado and fecha_auditoria and tipo_fraude:
+                    generar_informe_word(pagos_vencidos_90_dias_df, historial_clientes, nombre_empresa, nombre_fraudador, personal_involucrado, fecha_auditoria, tipo_fraude)
+                else:
+                    st.error("Por favor, complete todos los campos del formulario antes de generar el informe.")
