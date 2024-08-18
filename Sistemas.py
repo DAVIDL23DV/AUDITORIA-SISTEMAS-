@@ -470,7 +470,7 @@ if file_excel:
         if file_word:
             historial_clientes = extraer_historial_clientes(file_word)
 
-  # Aquí se solicita el formulario después de subir los archivos
+    # Aquí se solicita el formulario después de subir los archivos
     st.header("Formulario de datos de la auditoría")
     nombre_empresa = st.text_input("Nombre de la empresa")
     nombre_fraudador = st.text_input("Nombre del posible defraudador")
