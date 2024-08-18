@@ -477,10 +477,6 @@ if file_excel:
             personal_involucrado = st.text_input("Personal involucrado en el manejo de fondos")
             fecha_auditoria = st.date_input("Fecha de la auditoría")
 
-            # Campo adicional para seleccionar el tipo de fraude
-            tipo_fraude = st.selectbox(
-                "Seleccione el tipo de fraude",
-                ["Fraude financiero", "Fraude por apropiación indebida de activos", "Corrupción"]
             )
 
             if st.button("Generar Informe de Auditoría"):
