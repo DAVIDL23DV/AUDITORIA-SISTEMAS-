@@ -470,15 +470,21 @@ if file_excel:
         if file_word:
             historial_clientes = extraer_historial_clientes(file_word)
 
-            # Aquí se solicita el formulario después de subir los archivos
-            st.header("Formulario de datos de la auditoría")
-            nombre_empresa = st.text_input("Nombre de la empresa")
-            nombre_fraudador = st.text_input("Nombre del posible defraudador")
-            Jefe_del_personal_involucrado = st.text_input("Jefe del Personal involucrado en el manejo de fondos")
-            fecha_auditoria = st.date_input("Fecha de la auditoría")
+  # Aquí se solicita el formulario después de subir los archivos
+    st.header("Formulario de datos de la auditoría")
+    nombre_empresa = st.text_input("Nombre de la empresa")
+    nombre_fraudador = st.text_input("Nombre del posible defraudador")
+    jefe_del_personal_involucrado = st.text_input("Jefe del Personal involucrado en el manejo de fondos")
+    fecha_auditoria = st.date_input("Fecha de la auditoría")
 
-            if st.button("Generar Informe de Auditoría"):
-                if nombre_empresa and nombre_fraudador and Jefe_del_personal_involucrado and fecha_auditoria and tipo_fraude:
-                    generar_informe_word(pagos_vencidos_90_dias_df, historial_clientes, nombre_empresa, nombre_fraudador, jefe_de_personal_involucrado, fecha_auditoria, tipo_fraude)
-                else:
-                    st.error("Por favor, complete todos los campos del formulario antes de generar el informe.")
+    # Campo adicional para seleccionar el tipo de fraude
+    tipo_fraude = st.selectbox(
+        "Seleccione el tipo de fraude",
+        ["Fraude financiero", "Fraude por apropiación indebida de activos", "Corrupción"]
+    )
+
+    if st.button("Generar Informe de Auditoría"):
+        if nombre_empresa and nombre_fraudador and jefe_del_personal_involucrado and fecha_auditoria and tipo_fraude:
+            generar_informe_word(pagos_vencidos_90_dias_df, historial_clientes, nombre_empresa, nombre_fraudador, jefe_del_personal_involucrado, fecha_auditoria, tipo_fraude)
+        else:
+            st.error("Por favor, complete todos los campos del formulario antes de generar el informe.")
