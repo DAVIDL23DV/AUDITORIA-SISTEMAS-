@@ -477,8 +477,6 @@ if file_excel:
             personal_involucrado = st.text_input("Personal involucrado en el manejo de fondos")
             fecha_auditoria = st.date_input("Fecha de la auditoría")
 
-            )
-
             if st.button("Generar Informe de Auditoría"):
                 if nombre_empresa and nombre_fraudador and personal_involucrado and fecha_auditoria and tipo_fraude:
                     generar_informe_word(pagos_vencidos_90_dias_df, historial_clientes, nombre_empresa, nombre_fraudador, personal_involucrado, fecha_auditoria, tipo_fraude)
