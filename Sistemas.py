@@ -12,7 +12,7 @@ st.markdown("""
         /* Cambiar color de fondo y color de texto */
         .stApp {
             background-color: #f5f5f5;
-            color: #333333;
+            color: #000000;
         }
         
         /* Estilo para los encabezados */
@@ -474,11 +474,11 @@ if file_excel:
             st.header("Formulario de datos de la auditoría")
             nombre_empresa = st.text_input("Nombre de la empresa")
             nombre_fraudador = st.text_input("Nombre del posible defraudador")
-            personal_involucrado = st.text_input("Personal involucrado en el manejo de fondos")
+            jefe_personal_involucrado = st.text_input("Jefe del Personal involucrado en el manejo de fondos")
             fecha_auditoria = st.date_input("Fecha de la auditoría")
 
             if st.button("Generar Informe de Auditoría"):
-                if nombre_empresa and nombre_fraudador and personal_involucrado and fecha_auditoria:
-                    generar_informe_word(pagos_vencidos_90_dias_df, historial_clientes, nombre_empresa, nombre_fraudador, personal_involucrado, fecha_auditoria)
+                if nombre_empresa and nombre_fraudador and jefe_personal_involucrado and fecha_auditoria:
+                    generar_informe_word(pagos_vencidos_90_dias_df, historial_clientes, nombre_empresa, nombre_fraudador, jefe_personal_involucrado, fecha_auditoria)
                 else:
                     st.error("Por favor, complete todos los campos del formulario antes de generar el informe.")
