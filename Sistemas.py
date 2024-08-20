@@ -18,7 +18,7 @@ st.markdown("""
         /* Estilo para los encabezados */
         h1, h2, h3 {
             color: #4B8BBE;
-            font-family: 'Arial Black', sans-serif;
+            font-family: 'Times New Romans', sans-serif;
         }
 
         /* Estilo para el texto */
