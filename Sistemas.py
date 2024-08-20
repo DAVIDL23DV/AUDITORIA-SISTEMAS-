@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 from docx import Document
-from docx.shared import Pt
+from docx.shared import Pt, Inches
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from datetime import datetime
 from io import BytesIO
@@ -87,7 +87,7 @@ def extraer_historial_clientes(file):
     return historial_clientes
 
 # Función para generar el informe de Word
-def generar_informe_word(pagos_vencidos_90_dias, historial_clientes, nombre_empresa, nombre_fraudador, personal_involucrado, fecha_auditoria):
+def generar_informe_word(pagos_vencidos_90_dias, historial_clientes, imagenes_papeles_paths, nombre_empresa, nombre_fraudador, personal_involucrado, fecha_auditoria):
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     file_name = f'INFORME_AUDITORIA_{nombre_empresa}_{timestamp}.docx'
     
@@ -237,7 +237,7 @@ def generar_informe_word(pagos_vencidos_90_dias, historial_clientes, nombre_empr
     # Resumen de Pruebas Realizadas
     doc.add_heading('8. Resumen de Pruebas Realizadas', level=1)
     doc.add_paragraph(
-        "Las pruebas realizadas confirmaron la existencia de debilidades significativas en los controles internos de 'Salud Total S.A.'. "
+        f"Las pruebas realizadas confirmaron la existencia de debilidades significativas en los controles internos de {nombre_empresa}"
         "Estas debilidades permitieron a algunos miembros del personal de cobranzas desviar temporalmente los pagos de clientes, manipular registros contables y retrasar los depósitos bancarios. "
         "La falta de supervisión y controles efectivos fue un factor clave que facilitó la ocurrencia del fraude."
     )
@@ -252,7 +252,7 @@ def generar_informe_word(pagos_vencidos_90_dias, historial_clientes, nombre_empr
     # Identificación de los Sospechosos
     doc.add_heading('10. Identificación de los Sospechosos', level=1)
     doc.add_paragraph(
-        "El principal sospechoso identificado es Juan Pérez, cobrador de 'Salud Total S.A.'. Las pruebas indican que Juan Pérez tenía acceso no controlado a los fondos y la capacidad de manipular los registros contables. "
+        f"El principal sospechoso identificado es {nombre_fraudador}, cobrador de '{nombre_empresa}'. Las pruebas indican que {nombre_fraudador} tenía acceso no controlado a los fondos y la capacidad de manipular los registros contables. "
         "No se encontraron evidencias de la participación de otros empleados en este fraude."
     )
 
@@ -290,27 +290,6 @@ def generar_informe_word(pagos_vencidos_90_dias, historial_clientes, nombre_empr
         "Anexo 4: Documentación sobre la revisión de permisos y roles.\n"
         "Anexo 5: Análisis de antigüedad de la cartera de clientes."
     )
-
-    # Datos de pagos vencidos a más de 90 días
-    doc.add_heading('Datos de Pagos Vencidos a Más de 90 Días', level=1)
-    table = doc.add_table(rows=1, cols=len(pagos_vencidos_90_dias.columns))
-    table.alignment = WD_TABLE_ALIGNMENT.CENTER
-
-    hdr_cells = table.rows[0].cells
-    for i, column in enumerate(pagos_vencidos_90_dias.columns):
-        hdr_cells[i].text = column
-        hdr_cells[i].paragraphs[0].runs[0].font.bold = True
-
-    for index, row in pagos_vencidos_90_dias.iterrows():
-        row_cells = table.add_row().cells
-        for i, cell in enumerate(row):
-            row_cells[i].text = str(cell)
-
-    # Ajustar estilo de la tabla
-    table.style = 'Table Grid'
-    for row in table.rows:
-        for cell in row.cells:
-            cell.vertical_alignment = WD_TABLE_ALIGNMENT.CENTER
 
     # Historial de Clientes Evaluados
     doc.add_heading('15. Historial de Clientes Evaluados', level=1)
@@ -383,7 +362,12 @@ def generar_informe_word(pagos_vencidos_90_dias, historial_clientes, nombre_empr
         "Esto puede ayudar a identificar discrepancias y posibles fraudes."
     )
 
-   # Guardar el documento de Word
+    # Agregar imágenes de papeles de trabajo
+    doc.add_heading('Imágenes de Papeles de Trabajo', level=2)
+    for imagen in imagenes_papeles_paths:
+        doc.add_picture(imagen, width=Inches(5.0))  # Ajusta el tamaño de la imagen según sea necesario
+
+    # Guardar el documento de Word
     buffer = BytesIO()
     doc.save(buffer)
     buffer.seek(0)
@@ -436,7 +420,8 @@ Las principales funcionalidades incluyen:
 ### Instrucciones de uso:
 1. **Subir archivo Excel**: Carga el archivo de Excel con las carteras vencidas para iniciar el análisis.
 2. **Subir archivo Word** (opcional): Carga un archivo de Word con el historial de clientes para incluir en el informe.
-3. **Descargar informes**: Una vez procesados los datos, descarga los informes generados en los formatos proporcionados.
+3. **Subir imágenes de papeles de trabajo**: Suba aquí los papeles de trabajo en formato JPG que desee incluir en el informe.
+4. **Descargar informes**: Una vez procesados los datos, descarga los informes generados en los formatos proporcionados.
 """)
 
 # Subir archivo Excel para análisis de carteras vencidas
@@ -446,14 +431,13 @@ st.markdown("Por favor, sube el archivo Excel que contiene la información de la
 # Añadir el botón de descarga del archivo de ejemplo aquí
 st.markdown("Si no tienes un archivo de ejemplo, puedes descargar una plantilla de ejemplo aquí:")
 
-# Asegúrate de que el archivo esté en la ruta correcta antes de intentar abrirlo.
 try:
     with open("Plantilla Evaluacion de cartera.xlsx", "rb") as f:
         st.download_button(label="Descargar plantilla de ejemplo", data=f, file_name="Plantilla_Evaluacion_de_cartera.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 except FileNotFoundError:
     st.error("No se pudo encontrar la plantilla de ejemplo. Asegúrate de que el archivo está en la ubicación correcta.")
 
-# Aquí es donde se solicita el archivo Excel
+# Solicitar archivo Excel
 file_excel = st.file_uploader("Seleccione el archivo Excel con las carteras vencidas", type=["xlsx", "xls"])
 
 if file_excel:
@@ -469,16 +453,34 @@ if file_excel:
 
         if file_word:
             historial_clientes = extraer_historial_clientes(file_word)
+        else:
+            historial_clientes = []
 
-            # Aquí se solicita el formulario después de subir los archivos
-            st.header("Formulario de datos de la auditoría")
-            nombre_empresa = st.text_input("Nombre de la empresa")
-            nombre_fraudador = st.text_input("Nombre del posible defraudador")
-            jefe_personal_involucrado = st.text_input("Jefe del Personal involucrado en el manejo de fondos")
-            fecha_auditoria = st.date_input("Fecha de la auditoría")
+        # Subir imágenes de papeles de trabajo
+        st.header("Subir imágenes de Papeles de Trabajo")
+        st.markdown("Sube las imágenes en formato JPG que deseas incluir en los papeles de trabajo del informe final.")
+        imagenes_papeles = st.file_uploader("Seleccione las imágenes de papeles de trabajo", type=["jpg", "jpeg"], accept_multiple_files=True)
 
-            if st.button("Generar Informe de Auditoría"):
-                if nombre_empresa and nombre_fraudador and jefe_personal_involucrado and fecha_auditoria:
-                    generar_informe_word(pagos_vencidos_90_dias_df, historial_clientes, nombre_empresa, nombre_fraudador, jefe_personal_involucrado, fecha_auditoria)
-                else:
-                    st.error("Por favor, complete todos los campos del formulario antes de generar el informe.")
+        if imagenes_papeles:
+            # Guardar las imágenes temporalmente
+            imagenes_papeles_paths = []
+            for img in imagenes_papeles:
+                image_path = f"/tmp/{img.name}"
+                with open(image_path, "wb") as f:
+                    f.write(img.getbuffer())
+                imagenes_papeles_paths.append(image_path)
+        else:
+            imagenes_papeles_paths = []
+
+        # Formulario para ingresar datos adicionales
+        st.header("Formulario de datos de la auditoría")
+        nombre_empresa = st.text_input("Nombre de la empresa")
+        nombre_fraudador = st.text_input("Nombre del posible defraudador")
+        jefe_personal_involucrado = st.text_input("Jefe del Personal involucrado en el manejo de fondos")
+        fecha_auditoria = st.date_input("Fecha de la auditoría")
+
+        if st.button("Generar Informe de Auditoría"):
+            if nombre_empresa and nombre_fraudador and jefe_personal_involucrado and fecha_auditoria:
+                generar_informe_word(pagos_vencidos_90_dias_df, historial_clientes, imagenes_papeles_paths, nombre_empresa, nombre_fraudador, jefe_personal_involucrado, fecha_auditoria)
+            else:
+                st.error("Por favor, complete todos los campos del formulario antes de generar el informe.")
