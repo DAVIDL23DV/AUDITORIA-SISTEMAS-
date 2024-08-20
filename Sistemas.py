@@ -29,7 +29,7 @@ st.markdown("""
 
         /* Estilo para el botón de descarga */
         .stDownloadButton {
-            background-color: #000000;
+            background-color: #FF0000;
             color: white;
             border-radius: 10px;
         }
