@@ -11,7 +11,7 @@ st.markdown("""
     <style>
         /* Cambiar color de fondo y color de texto */
         .stApp {
-            background-color: #f5f5f5;
+            background-color: #000000;
             color: #FFFFFF;
         }
         
