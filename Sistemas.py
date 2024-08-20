@@ -475,7 +475,8 @@ if file_excel:
             nombre_empresa = st.text_input("Nombre de la empresa")
             nombre_fraudador = st.text_input("Nombre del posible defraudador")
             jefe_personal_involucrado = st.text_input("Jefe del Personal involucrado en el manejo de fondos")
-            fecha_auditoria = st.date_input("Fecha de la auditoría")
+            fecha_desde_auditoria = st.date_input("Fecha desde de la auditoría")
+            Fecha_hasta_auditoria = st.date_input("Fecha hasta de la auditoría")
 
             if st.button("Generar Informe de Auditoría"):
                 if nombre_empresa and nombre_fraudador and jefe_personal_involucrado and fecha_auditoria:
