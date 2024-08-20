@@ -24,7 +24,7 @@ st.markdown("""
         /* Estilo para el texto */
         p, li {
             font-family: 'Arial', sans-serif;
-            color: #333333;
+            color: #FFFFFF;
         }
 
         /* Estilo para el botón de descarga */
