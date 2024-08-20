@@ -365,7 +365,7 @@ def generar_informe_word(pagos_vencidos_90_dias, historial_clientes, imagenes_pa
     # Agregar imágenes de papeles de trabajo
     doc.add_heading('Imágenes de Papeles de Trabajo', level=2)
     for imagen in imagenes_papeles_paths:
-        doc.add_picture(imagen, width=Inches(8.0))  # Ajusta el tamaño de la imagen según sea necesario
+        doc.add_picture(imagen, width=Inches(6.0))  # Ajusta el tamaño de la imagen según sea necesario
 
     # Guardar el documento de Word
     buffer = BytesIO()
